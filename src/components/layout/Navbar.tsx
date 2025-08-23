@@ -3,17 +3,17 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Link as LinkIcon, LogOut, Menu, X } from "lucide-react";
+import { Link as LinkIcon, LogOut, Menu, X, LayoutDashboard } from "lucide-react";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { ModeToggle } from "../mode-toggle";
-import { Button } from "../ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { ModeToggle } from "@/components/mode-toggle";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 
 const navLinks = [
   { href: "#features", label: "Features" },
@@ -43,6 +43,12 @@ export default function Navbar() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuItem asChild>
+              <Link href='/dashboard'>
+                <LayoutDashboard className="mr-2 h-4 w-4"/>
+                <span>Dashboard</span>
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => signOut()}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>

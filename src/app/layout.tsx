@@ -5,8 +5,6 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import AuthProvider from "@/components/providers/AuthProvider";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -39,16 +37,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <div className="relative flex min-h-dvh flex-col">
-              <Navbar />
-              <main
-                className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10"
-                role="main"
-              >
-                {children}
-              </main>
-              <Footer />
-            </div>
+            {children}
           </ThemeProvider>
         </AuthProvider>
       </body>
