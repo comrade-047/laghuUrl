@@ -1,4 +1,3 @@
-// src/app/api/links/route.ts
 import { prisma } from "@/lib/prisma";
 import { generateSlug } from "@/lib/utils";
 import { getServerSession } from "next-auth";
