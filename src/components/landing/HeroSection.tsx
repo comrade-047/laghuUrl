@@ -1,9 +1,13 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 export default function HeroSection() {
+  const {status} = useSession();
+  const href = status === 'authenticated' ? "/dashboard" : "/api/auth/signin";
   return (
     <section className="bg-gray-50 dark:bg-gray-900">
       <div className="container flex flex-col items-center gap-6 py-16 sm:py-20 md:py-28 text-center">
@@ -27,7 +31,7 @@ export default function HeroSection() {
           </div>
           
           <Button asChild size="lg" className="h-14 w-full rounded-lg bg-indigo-600 px-8 text-base text-white transition-colors hover:bg-indigo-700 sm:w-auto">
-            <Link href="/api/auth/signin">
+            <Link href={href}>
               Get Started
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>

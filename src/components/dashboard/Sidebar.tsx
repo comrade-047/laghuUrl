@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
+import Image from "next/image";
 import {
   Link as LinkIcon,
   LayoutDashboard,
@@ -29,6 +30,8 @@ export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
+  const displayName = session?.user?.name || session?.user?.username;
+
   return (
     <aside
       className={cn(
@@ -38,13 +41,16 @@ export function Sidebar() {
       )}
     >
       {/* Logo / Brand */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b dark:border-gray-800">
+      <div className="flex items-center gap-3 px-4 py-5 border-b dark:border-gray-800 h-16">
         <Link href="/" className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold">
-            L
-          </div>
-          <span className="text-lg font-bold text-gray-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity">
-            Laghurl
+            <Image
+                src="/logo.svg"
+                alt="laghuUrl Logo"
+                width={32}
+                height={32}
+            />
+          <span className="text-lg font-bold text-gray-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            laghuUrl
           </span>
         </Link>
       </div>
@@ -90,19 +96,19 @@ export function Sidebar() {
 
       {/* User info + logout */}
       <div className="p-4 border-t dark:border-gray-800 flex items-center gap-3">
-        <Avatar className="h-10 w-10 shrink-0 ring-2 ring-indigo-500">
+        <Avatar className="h-10 w-10 shrink-0">
           <AvatarImage
             src={session?.user?.image ?? ""}
-            alt={session?.user?.name ?? ""}
+            alt={displayName ?? ""}
           />
           <AvatarFallback>
-            {session?.user?.name?.charAt(0).toUpperCase() ?? "U"}
+            {displayName?.charAt(0).toUpperCase() ?? "U"}
           </AvatarFallback>
         </Avatar>
 
         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-            {session?.user?.name}
+            {displayName}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
             {session?.user?.email}

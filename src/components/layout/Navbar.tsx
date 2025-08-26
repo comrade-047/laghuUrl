@@ -1,10 +1,9 @@
-// src/components/layout/Navbar.tsx
 "use client";
 
 import * as React from "react";
 import Link from "next/link";
 import { Link as LinkIcon, LogOut, Menu, X, LayoutDashboard } from "lucide-react";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,18 +25,22 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = React.useState(false);
 
   const UserAvatar = () => {
+    // 1. Create a displayName variable to handle both name and username
+    const displayName = session?.user?.name || session?.user?.username;
+
     if (status === "authenticated") {
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar className="h-10 w-10">
+                {/* 2. Use the displayName variable here */}
                 <AvatarImage
                   src={session.user?.image ?? ""}
-                  alt={session.user?.name ?? ""}
+                  alt={displayName ?? ""}
                 />
                 <AvatarFallback>
-                  {session.user?.name?.charAt(0).toUpperCase()}
+                  {displayName?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -57,7 +60,9 @@ export default function Navbar() {
         </DropdownMenu>
       );
     }
-    return <Button onClick={() => signIn("google")}>Get Started</Button>;
+    return <Button asChild>
+      <Link href='/login'>Get Started</Link>
+    </Button>;
   };
 
   return (

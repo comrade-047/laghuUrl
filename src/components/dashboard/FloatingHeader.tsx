@@ -18,6 +18,8 @@ import Link from "next/link";
 export function FloatingHeader() {
   const { data: session } = useSession();
 
+  const displayName = session?.user?.name || session?.user?.username;
+
   return (
     <header className="absolute top-6 right-6 z-10 flex items-center gap-4">
       <ModeToggle />
@@ -27,16 +29,16 @@ export function FloatingHeader() {
             <Avatar className="h-10 w-10">
               <AvatarImage
                 src={session?.user?.image ?? ""}
-                alt={session?.user?.name ?? ""}
+                alt={displayName ?? ""}
               />
               <AvatarFallback>
-                {session?.user?.name?.charAt(0).toUpperCase() ?? "U"}
+                {displayName?.charAt(0).toUpperCase() ?? "U"}
               </AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end" forceMount>
-          <DropdownMenuLabel>{session?.user?.name}</DropdownMenuLabel>
+          <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
             <Link href="/dashboard/settings">
