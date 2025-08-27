@@ -18,16 +18,30 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-
     const { url: originalUrl } = createLinkSchema.parse(body);
+
+    const existingLink = await prisma.link.findFirst({
+      where: {
+        userId: session.user.id,
+        originalUrl,
+      },
+    });
+
+    if (existingLink) {
+      return NextResponse.json(
+        { message: "You already shortened this URL." },
+        { status: 409 } 
+      );
+    }
 
     let slug: string = "";
     let isSlugUnique = false;
+    const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
 
     while (!isSlugUnique) {
       slug = generateSlug();
-      const existingLink = await prisma.link.findUnique({ where: { slug } });
-      if (!existingLink) {
+      const existingSlug = await prisma.link.findUnique({ where: { slug } });
+      if (!existingSlug) {
         isSlugUnique = true;
       }
     }
@@ -37,6 +51,7 @@ export async function POST(req: Request) {
         originalUrl,
         slug,
         userId: session.user.id,
+        expiresAt : expiresAt
       },
     });
 
