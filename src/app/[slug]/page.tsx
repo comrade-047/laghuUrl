@@ -1,15 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 
-interface Params {
-  params: {
-    slug: string;
-  };
-}
-
-export default async function RedirectPage({ params }: Params) {
-  const { slug } = params;
-
+export default async function RedirectPage({
+  params: { slug }, 
+}: {
+  params: { slug: string };
+}) {
   const link = await prisma.link.findUnique({
     where: { slug },
   });
@@ -22,12 +18,9 @@ export default async function RedirectPage({ params }: Params) {
     notFound();
   }
 
-  await prisma.link.update({
-    where: { slug },
+  await prisma.click.create({
     data: {
-      clicks: {
-        increment: 1,
-      },
+      linkId: link.id,
     },
   });
 

@@ -4,10 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { formatDistanceToNow } from "date-fns";
 import { CheckCircle, LinkIcon, MousePointerClick, XCircle } from "lucide-react";
-import Link from "next/link";
-import { LinkActions } from "@/components/dashboard/LinkActions";
+import { LinksDataTable } from "@/components/dashboard/LinksDataTable";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -22,10 +20,13 @@ export default async function DashboardPage() {
   const links = await prisma.link.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
+    include: {
+      clicks: true, 
+    },
   });
 
   const totalLinks = links.length;
-  const totalClicks = links.reduce((acc, link) => acc + link.clicks, 0);
+  const totalClicks = links.reduce((acc, link) => acc + link.clicks.length, 0);
 
   const activeLinks = links.filter(
     (link) => !link.expiresAt || link.expiresAt > now
@@ -108,57 +109,7 @@ export default async function DashboardPage() {
           <CardTitle>Recent Links</CardTitle>
         </CardHeader>
         <CardContent>
-          {recentLinks.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-xs text-muted-foreground uppercase">
-                  <tr>
-                    <th scope="col" className="py-3 px-4 text-left">Short URL</th>
-                    <th scope="col" className="py-3 px-4 text-left">Original URL</th>
-                    <th scope="col" className="py-3 px-4 text-center">Clicks</th>
-                    <th scope="col" className="py-3 px-4 text-left">Created</th>
-                    <th scope="col" className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y dark:divide-slate-800">
-                  {recentLinks.map((link) => (
-                    <tr
-                      key={link.id}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                    >
-                      <td className="py-3 px-4 font-medium text-indigo-600 dark:text-indigo-400 truncate max-w-[200px]">
-                        <Link
-                          href={`/${link.slug}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block"
-                        >
-                          {process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//, '')}/{link.slug}
-                        </Link>
-                      </td>
-                      <td className="py-3 px-4 text-muted-foreground truncate max-w-xs">
-                        {link.originalUrl}
-                      </td>
-                      <td className="py-3 px-4 text-center font-medium">
-                        {link.clicks.toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 text-muted-foreground">
-                        {formatDistanceToNow(link.createdAt, { addSuffix: true })}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <LinkActions slug={link.slug} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center text-slate-500 dark:text-slate-400 py-8">
-              <p className="mb-2">You haven&apos;t created any links yet.</p>
-              <p className="text-sm">Use the form above to create your first one!</p>
-            </div>
-          )}
+          <LinksDataTable links={recentLinks} />
         </CardContent>
       </Card>
     </>
