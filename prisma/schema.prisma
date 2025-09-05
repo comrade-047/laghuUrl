@@ -35,7 +35,7 @@ model Link {
   clicks      Click[]
   expiresAt   DateTime?
 
-  user   User  @relation(fields: [userId], references: [id])
+  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
 
   @@index([userId])
@@ -77,6 +77,7 @@ model User {
   image         String?
   password      String?
   role          Role      @default(USER)
+  bio           String?   @db.Text
   accounts      Account[]
   sessions      Session[]
   links         Link[]

@@ -55,16 +55,26 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user ,trigger, session}) {
       if (user) {
         token.id = user.id;
         token.username = user.username; 
+      }
+      if(trigger === 'update' && session?.name){
+        const dbUser = await prisma.user.findUnique({
+        where: { id: token.id as string },
+      });
+      if (dbUser) {
+        token.name = dbUser.name;
+        token.username = dbUser.username;
+      }
       }
       return token;
     },
     session({ session, token }) {
       session.user.id = token.id as string;
       session.user.username = token.username as string | null;
+      session.user.name = token.name
       return session;
     },
   },

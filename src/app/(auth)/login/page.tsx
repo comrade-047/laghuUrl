@@ -92,7 +92,7 @@ export default function LoginPage() {
       const signInResult = await signIn("credentials", {
         username: data.username,
         password: data.password,
-        redirect: false, // Handle redirect manually
+        redirect: false,
       });
 
       if (signInResult?.error) {
@@ -102,12 +102,15 @@ export default function LoginPage() {
       toast.success("Signed in successfully!");
       router.push("/dashboard");
     } catch (error) {
-      toast.error("Sign in failed", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "Please check your credentials and try again.",
-      });
+       let description = "Please check your details and try again.";
+      if (error instanceof Error) {
+        if (error.message === 'CredentialsSignin') {
+          description = "Invalid username or password.";
+        } else {
+          description = error.message; 
+        }
+      }
+      toast.error("Sign in failed", { description });
     } finally {
       setIsLoading(null);
     }
