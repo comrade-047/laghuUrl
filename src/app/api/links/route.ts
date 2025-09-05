@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
+import * as cheerio from "cheerio";
 
 const createLinkSchema = z.object({
   url: z.string().url({ message: "Please enter a valid URL." }),
@@ -40,6 +41,28 @@ export async function POST(req: Request) {
         },
         { status: 409 }
       );
+    }
+
+    const metaData = { title: "", description: "", image: "" };
+    try {
+      const response = await fetch(originalUrl);
+      if (response.ok) {
+        const html = await response.text();
+        const $ = cheerio.load(html);
+        metaData.title =
+          $('meta[property="og:title"]').attr("content") || $("title").text() || "";
+        metaData.description =
+          $('meta[property="og:description"]').attr("content") ||
+          $('meta[name="description"]').attr("content") ||
+          "";
+        metaData.image =
+          $('meta[property="og:image"]').attr("content") ||
+          $('meta[property="og:image:url"]').attr("content") ||
+          "";
+      }
+    } catch (scrapeError) {
+      console.warn(`Failed to scrape ${originalUrl}:`, scrapeError);
+      // We don't stop the process, just proceed without metadata
     }
 
     let finalSlug: string;
@@ -92,6 +115,9 @@ export async function POST(req: Request) {
         userId: session.user.id,
         expiresAt,
         isCustom,
+        metaTitle : metaData.title,
+        metaDescription : metaData.description,
+        metaImage : metaData.image
       },
     });
 

@@ -34,6 +34,9 @@ model Link {
   isCustom    Boolean  @default(false)
   clicks      Click[]
   expiresAt   DateTime?
+  metaTitle       String?
+  metaDescription String?
+  metaImage       String?
 
   user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String

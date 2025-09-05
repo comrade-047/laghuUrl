@@ -28,20 +28,46 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
+import Image from "next/image";
 
 const formSchema = z.object({
-  url: z.preprocess((val) => {
-    if (typeof val === "string" && val.trim() && !val.trim().startsWith("http")) {
-      return `https://${val.trim()}`;
-    }
-    return val;
-  }, z.string().trim().min(1, { message: "Please enter a URL." }).url({ message: "Please enter a valid URL." })),
+  url: z.preprocess(
+    (val) => {
+      if (
+        typeof val === "string" &&
+        val.trim() &&
+        !val.trim().startsWith("http")
+      ) {
+        return `https://${val.trim()}`;
+      }
+      return val;
+    },
+    z
+      .string()
+      .trim()
+      .min(1, { message: "Please enter a URL." })
+      .url({ message: "Please enter a valid URL." })
+  ),
   expiresAt: z.date().optional(),
-  customSlug: z.string().trim().optional(),
+  customSlug: z
+    .string()
+    .regex(/^[a-z0-9_-]{3,20}$/, {
+      message: "Must be 3-20 characters (letters, numbers, _, -)",
+    })
+    .optional()
+    .or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 type ValidationStatus = "valid" | "invalid" | "pending" | "idle";
+
+interface MetaData {
+  title?: string;
+  description?: string;
+  image?: string;
+}
 
 interface UrlShortenerFormProps {
   showCustomSlug?: boolean;
@@ -52,18 +78,45 @@ export function UrlShortenerForm({
   showCustomSlug = false,
   showCustomExpiration = false,
 }: UrlShortenerFormProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [shortUrl, setShortUrl] = React.useState<string | null>(null);
+  const [isCustom, setIsCustom] = React.useState(false);
+  const [isCustomExpiry, setIsCustomExpiry] = React.useState(false);
+  const [isScraping, setIsScraping] = React.useState(false);
+  const [meta, setMeta] = React.useState<MetaData | null>(null);
   const [validationStatus, setValidationStatus] =
     React.useState<ValidationStatus>("idle");
-  const [isCustomExpiry, setIsCustomExpiry] = React.useState(false);
-  const [isCustom, setIsCustom] = React.useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { url: "" },
+    defaultValues: { url: "", customSlug: "" },
   });
+
+  const handleUrlBlur = async () => {
+    if (form.formState.errors.url || !form.getValues("url")) return;
+
+    const url = form.getValues("url");
+    const validation = formSchema.shape.url.safeParse(url);
+
+    if (validation.success) {
+      setIsScraping(true);
+      setMeta(null);
+      try {
+        const response = await fetch(
+          `/api/scrape-meta?url=${encodeURIComponent(validation.data)}`
+        );
+        if (response.ok) {
+          setMeta(await response.json());
+        }
+      } catch (error) {
+        console.error("Failed to scrape metadata:", error);
+      } finally {
+        setIsScraping(false);
+      }
+    }
+  };
 
   const handleValidateUrl = async () => {
     const url = form.getValues("url");
@@ -90,7 +143,7 @@ export function UrlShortenerForm({
         setValidationStatus("invalid");
         toast.error(result.message);
       }
-    } catch {
+    } catch (err) {
       setValidationStatus("invalid");
       toast.error("Failed to check the link.");
     }
@@ -101,6 +154,7 @@ export function UrlShortenerForm({
     setError(null);
     setShortUrl(null);
     setValidationStatus("idle");
+    setMeta(null);
 
     try {
       const response = await fetch("/api/links", {
@@ -108,17 +162,21 @@ export function UrlShortenerForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: data.url,
-          expiresAt: showCustomExpiration && isCustomExpiry ? data.expiresAt : undefined,
+          expiresAt:
+            showCustomExpiration && isCustomExpiry ? data.expiresAt : undefined,
           customSlug: showCustomSlug && isCustom ? data.customSlug : undefined,
         }),
       });
 
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "An error occurred.");
+
       setShortUrl(result.shortUrl);
+      toast.success("Link created successfully!");
       form.reset();
-      setIsCustomExpiry(false);
       setIsCustom(false);
+      setIsCustomExpiry(false);
+      router.refresh();
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "An unknown error occurred.";
@@ -132,28 +190,26 @@ export function UrlShortenerForm({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue("url", e.target.value);
     setValidationStatus("idle");
+    setMeta(null);
   };
 
   return (
     <div className="w-full max-w-2xl mx-auto">
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-6 bg-white dark:bg-slate-900 shadow-md rounded-xl p-6"
-        >
-          {/* URL Input + Shorten Button */}
-          <div className="flex w-full flex-col gap-3 sm:flex-row">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="flex w-full flex-col items-center gap-3 sm:flex-row">
             <FormField
               control={form.control}
               name="url"
               render={({ field }) => (
-                <FormItem className="relative flex-1">
+                <FormItem className="w-full relative">
                   <FormControl>
                     <Input
                       placeholder="Paste your long URL here..."
-                      className="h-12 flex-1 rounded-lg border-gray-300 bg-gray-50 text-base transition focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-gray-700 dark:bg-slate-800 dark:text-white pr-12"
+                      className="h-14 flex-1 rounded-lg border-gray-300 bg-white text-base transition focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white pr-12"
                       {...field}
                       onChange={handleInputChange}
+                      onBlur={handleUrlBlur}
                     />
                   </FormControl>
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -185,7 +241,7 @@ export function UrlShortenerForm({
             <Button
               type="submit"
               disabled={isLoading}
-              className="h-12 sm:w-auto w-full rounded-lg bg-indigo-600 px-6 text-base text-white transition-colors hover:bg-indigo-700"
+              className="h-14 w-full rounded-lg bg-indigo-600 px-8 text-base text-white transition-colors hover:bg-indigo-700 sm:w-auto"
             >
               {isLoading ? (
                 <Loader2 className="h-6 w-6 animate-spin" />
@@ -201,10 +257,41 @@ export function UrlShortenerForm({
             {form.formState.errors.url?.message}
           </FormMessage>
 
-          {/* Advanced Options */}
+          {/* Meta Preview Section */}
+          <div className="mt-4">
+            {isScraping && (
+              <div className="flex items-center space-x-4 rounded-lg border p-4">
+                <Skeleton className="h-16 w-16 rounded-md" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-[200px]" />
+                </div>
+              </div>
+            )}
+            {meta?.title && !isScraping && (
+              <div className="flex items-center space-x-4 rounded-lg border p-4 animate-in fade-in-20">
+                {meta.image && (
+                  <Image
+                    src={meta.image}
+                    alt={meta.title || "Link preview"}
+                    width={64}
+                    height={64}
+                    className="rounded-md object-cover h-16 w-16"
+                  />
+                )}
+                <div className="space-y-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{meta.title}</p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {meta.description}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Advanced Options Toggles */}
           {(showCustomSlug || showCustomExpiration) && (
-            <div className="space-y-6 border-t pt-6">
-              {/* Custom Slug */}
+            <div className="space-y-4 pt-4 border-t">
               {showCustomSlug && (
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2">
@@ -225,10 +312,10 @@ export function UrlShortenerForm({
                       control={form.control}
                       name="customSlug"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="animate-in fade-in-20">
                           <FormControl>
                             <Input
-                              placeholder="Enter custom slug"
+                              placeholder="my-awesome-link"
                               className="h-11 rounded-lg"
                               {...field}
                             />
@@ -239,8 +326,6 @@ export function UrlShortenerForm({
                   )}
                 </div>
               )}
-
-              {/* Custom Expiration */}
               {showCustomExpiration && (
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2">
@@ -261,12 +346,12 @@ export function UrlShortenerForm({
                       control={form.control}
                       name="expiresAt"
                       render={({ field }) => (
-                        <FormItem className="flex flex-col">
+                        <FormItem className="flex flex-col animate-in fade-in-20">
                           <Popover>
                             <PopoverTrigger asChild>
                               <FormControl>
                                 <Button
-                                  variant="outline"
+                                  variant={"outline"}
                                   className={cn(
                                     "h-11 w-[240px] justify-start rounded-lg pl-3 text-left font-normal",
                                     !field.value && "text-muted-foreground"
@@ -281,7 +366,10 @@ export function UrlShortenerForm({
                                 </Button>
                               </FormControl>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
                               <Calendar
                                 mode="single"
                                 selected={field.value}
@@ -301,9 +389,7 @@ export function UrlShortenerForm({
           )}
         </form>
       </Form>
-
-      {/* Submission Result */}
-      <div className="mt-6">
+      <div className="mt-4 h-16">
         <SubmissionResult
           isLoading={isLoading}
           error={error}
