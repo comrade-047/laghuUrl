@@ -33,23 +33,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 
 const formSchema = z.object({
-  url: z.preprocess(
-    (val) => {
-      if (
-        typeof val === "string" &&
-        val.trim() &&
-        !val.trim().startsWith("http")
-      ) {
-        return `https://${val.trim()}`;
-      }
-      return val;
-    },
-    z
-      .string()
-      .trim()
-      .min(1, { message: "Please enter a URL." })
-      .url({ message: "Please enter a valid URL." })
-  ),
+  url: z
+    .string()
+    .trim()
+    .min(1, { message: "Please enter a URL." })
+    .url({ message: "Please enter a valid URL." })
+    .transform((val) =>
+      val && !val.startsWith("http") ? `https://${val}` : val
+    ),
   expiresAt: z.date().optional(),
   customSlug: z
     .string()
@@ -59,6 +50,8 @@ const formSchema = z.object({
     .optional()
     .or(z.literal("")),
 });
+
+
 
 type FormValues = z.infer<typeof formSchema>;
 type ValidationStatus = "valid" | "invalid" | "pending" | "idle";

@@ -70,7 +70,7 @@ export function LinkAnalytics({ clicks }: { clicks: Click[] }) {
         borderWidth: 3,
         backgroundColor: (context: ScriptableContext<"line">) => {
           const { ctx, chartArea } = context.chart;
-          if (!chartArea) return null;
+          if (!chartArea) return "rgba(99, 102, 241, 0.2)";
           const primaryRgb = getComputedStyle(document.documentElement)
             .getPropertyValue("--primary-rgb")
             .trim();

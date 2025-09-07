@@ -16,18 +16,16 @@ import Image from "next/image";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 
-export default async function LinkDetailsPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function LinkDetailsPage({ params }: any) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     redirect("/login?callbackUrl=/dashboard/urls");
   }
-  const param = await params;
+
+  const { id } = params;
+
   const link = await prisma.link.findUnique({
-    where: { id: param.id, userId: session.user.id },
+    where: { id, userId: session.user.id },
     include: { clicks: true },
   });
 
@@ -37,7 +35,6 @@ export default async function LinkDetailsPage({
 
   const shortUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/${link.slug}`;
 
-  // We no longer need to fetch. We just use the saved data.
   const metaData = {
     title: link.metaTitle,
     description: link.metaDescription,
