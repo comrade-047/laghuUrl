@@ -41,17 +41,16 @@ export function Sidebar() {
       )}
     >
       {/* Logo / Brand */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b dark:border-gray-800 h-16">
-        <Link href="/" className="flex items-center gap-3">
-            <Image
-                src="/logo.svg"
-                alt="laghuUrl Logo"
-                width={32}
-                height={32}
-            />
-          <span className="text-lg font-bold text-gray-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-            laghuUrl
-          </span>
+      <div className="flex items-center justify-center px-4 py-5 border-b dark:border-gray-800 h-16">
+        <Link href="/" className="block w-32 group-hover:w-40 transition-all duration-300">
+          <Image
+            src="/logo.svg"
+            alt="laghuUrl Logo"
+            width={160}
+            height={40}
+            className="w-full h-auto"
+            priority
+          />
         </Link>
       </div>
 

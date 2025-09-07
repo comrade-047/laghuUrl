@@ -1,5 +1,5 @@
 "use client";
-
+import type { ScriptableContext } from "chart.js";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -68,9 +68,8 @@ export function LinkAnalytics({ clicks }: { clicks: Click[] }) {
         fill: true,
         borderColor: "hsl(var(--primary))", 
         borderWidth: 3,
-        backgroundColor: (context: any) => {
-          const ctx = context.chart.ctx;
-          const chartArea = context.chart.chartArea;
+        backgroundColor: (context: ScriptableContext<"line">) => {
+          const { ctx, chartArea } = context.chart;
           if (!chartArea) return null;
           const primaryRgb = getComputedStyle(document.documentElement)
             .getPropertyValue("--primary-rgb")

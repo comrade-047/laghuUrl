@@ -128,12 +128,14 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 h-16 w-16">
+          <div className="mx-auto mb-1">
             <Image
               src="/logo.svg"
               alt="laghuUrl Logo"
-              width={64}
-              height={64}
+              width={0}
+              height={0}
+              sizes="100vw"
+              className="w-full h-auto"
             />
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">
